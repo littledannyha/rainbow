@@ -51,8 +51,21 @@ public class RainbowTable {
 		
 	}
 	
+	
+	
 	private void buildTable() {
 		// TODO: Build the rainbow table
+		for (int i = 0; i < numRows; i++) {
+			String first = this.randomPass();
+			String last = first;
+			for(int j = 0; i < chainLength;i++){
+				last = this.hash(last);
+				last = this.reduce(last, j);
+			}
+//			hash last one more time because last is currently a plaintext
+			this.lastToFirst.put(this.hash(last), first);
+			
+		}
 	}
 	
 	/**
@@ -75,6 +88,7 @@ public class RainbowTable {
 	public String lookup(String hash) {
 		//TODO: Lookup a given hash in the rainbow table.
 		// Return null if the password is not found
+		
 		return null;
 	}
 
@@ -116,6 +130,7 @@ public class RainbowTable {
 		}
 		return null;
 	}
+	
 	
 	/**
 	 * This method simply writes the lastToFirst map to a file so it can be read later.
@@ -162,4 +177,14 @@ public class RainbowTable {
 		}
 		return true;
 	}
+	
+	private String randomPass(){
+		StringBuffer s = new StringBuffer();
+		for(int i = 0; i < this.NUM_CHARACTERS;i++){
+			int index = (int)(Math.random() * this.characters.length);
+			s.append(this.characters[i]);
+		}
+		return s.toString();
+	}
+	
 }
