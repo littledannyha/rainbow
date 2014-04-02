@@ -8,7 +8,12 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 
 
 public class RainbowTable {
@@ -40,7 +45,9 @@ public class RainbowTable {
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}				
-		
+		System.out.println(this.hash("lasy"));
+		this.lastToFirst = new HashMap<>();
+
 		String filename = "table" + numChains+"x"+chainLength+".txt";
 		if(!readFromFile(filename)) {
 			long startTime = System.currentTimeMillis();
@@ -56,9 +63,11 @@ public class RainbowTable {
 	private void buildTable() {
 		// TODO: Build the rainbow table
 		for (int i = 0; i < numRows; i++) {
+			System.out.println("new row");
 			String first = this.randomPass();
 			String last = first;
-			for(int j = 0; i < chainLength;i++){
+			//hash and reduce chainlength times
+			for(int j = 0; i < chainLength-1;i++){
 				last = this.hash(last);
 				last = this.reduce(last, j);
 			}
@@ -88,8 +97,53 @@ public class RainbowTable {
 	public String lookup(String hash) {
 		//TODO: Lookup a given hash in the rainbow table.
 		// Return null if the password is not found
+		ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(20);
+		ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
+		Set<String> outputs = Collections.newSetFromMap(c);
+//		for each possible depth up to chain length
+		for (int i = 0; i <= this.chainLength; i++) {
+			this.lookupDepth(hash, i, outputs);
+		}
+		if(outputs.isEmpty()){
+			System.out.println("return null");
+			return null;
+		}
+		else{
+			String out = outputs.iterator().next();
+			System.out.println("lookup: " + hash + "\noutput: " + out);
+			return out;
+		}
 		
-		return null;
+	}
+	
+	/**
+	 * Looks up the hash for a certain depth inside each of the chains
+	 * @param hash 
+	 * 	the hash to be reversed
+	 * @param depth
+	 * 	how far from the end of the chain we're searching 
+	 * @return
+	 * 	The Plaintext of the hash if it exists at that depth in the table, or null if not found
+	 */	
+	public void lookupDepth(String hash,int depth,Set<String> set){
+		String s = this.hash(hash);
+		for(int i = 0;i<depth;i++){
+			s = this.reduce(s, this.chainLength-i+1);
+			s = this.hash(s);
+		}
+		if(!this.lastToFirst.containsKey(s)){
+			return;
+		}
+		else{
+			String start = this.lastToFirst.get(s);
+			for(int i = 0; i < this.chainLength - depth; i++){
+				start = this.hash(start);
+				start = this.reduce(start, i);
+			}
+			set.add(start);
+			return;
+		}
+			
 	}
 
 	/**
@@ -97,7 +151,7 @@ public class RainbowTable {
 	 * message_digest is initialized to md5, so this will be the md5 hash if 
 	 * nothing is changed.
 	 */
-	private String hash(String passwd) {
+	public String hash(String passwd) {
 		try {
 			res = message_digest.digest(passwd.getBytes("US-ASCII"));
 			bi = new BigInteger(1, res);
@@ -182,7 +236,7 @@ public class RainbowTable {
 		StringBuffer s = new StringBuffer();
 		for(int i = 0; i < this.NUM_CHARACTERS;i++){
 			int index = (int)(Math.random() * this.characters.length);
-			s.append(this.characters[i]);
+			s.append(this.characters[index]);
 		}
 		return s.toString();
 	}

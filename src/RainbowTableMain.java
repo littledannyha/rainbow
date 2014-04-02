@@ -1,14 +1,30 @@
+import java.util.Scanner;
+
 public class RainbowTableMain {
 
 	private static int NUM_CHAINS = 40000;
-	private static int CHAIN_LENGTH = 200;
+	private static int CHAIN_LENGTH = 2;
 	
 	public RainbowTableMain() {
 		this(NUM_CHAINS, CHAIN_LENGTH);
 	}
 	
 	public RainbowTableMain(int numChains, int chainLength) {
+//		RainbowTable rt = new RainbowTable(numChains, chainLength);
 		RainbowTable rt = new RainbowTable(numChains, chainLength);
+		
+		Scanner sc = new Scanner(System.in);
+		String curr = "";
+		while((curr = sc.next()) != null){
+			if(curr.length() == 4){
+				System.out.println("hashing: " + curr + "\noutput: " + rt.hash(curr));
+			}
+			else{
+				String pt = rt.lookup(curr);
+				System.out.println(pt);
+			}
+			
+		}
 	}
 	
 	public static void main(String[] args) {
@@ -18,5 +34,7 @@ public class RainbowTableMain {
 		else { 
 			new RainbowTableMain();
 		}
+		
+		
 	}
 }
