@@ -3,7 +3,7 @@ import java.util.Scanner;
 public class RainbowTableMain {
 
 	private static int NUM_CHAINS = 40000;
-	private static int CHAIN_LENGTH = 2;
+	private static int CHAIN_LENGTH = 1;
 	
 	public RainbowTableMain() {
 		this(NUM_CHAINS, CHAIN_LENGTH);
@@ -18,6 +18,7 @@ public class RainbowTableMain {
 		while((curr = sc.next()) != null){
 			if(curr.length() == 4){
 				System.out.println("hashing: " + curr + "\noutput: " + rt.hash(curr));
+				System.out.println();
 			}
 			else{
 				String pt = rt.lookup(curr);

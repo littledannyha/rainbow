@@ -101,8 +101,11 @@ public class RainbowTable {
 		ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
 		Set<String> outputs = Collections.newSetFromMap(c);
 //		for each possible depth up to chain length
-		for (int i = 0; i <= this.chainLength; i++) {
+		for (int i = 0; i < this.chainLength; i++) {
 			this.lookupDepth(hash, i, outputs);
+			if(!outputs.isEmpty()){
+				break;
+			}
 		}
 		if(outputs.isEmpty()){
 			System.out.println("return null");
@@ -126,7 +129,7 @@ public class RainbowTable {
 	 * 	The Plaintext of the hash if it exists at that depth in the table, or null if not found
 	 */	
 	public void lookupDepth(String hash,int depth,Set<String> set){
-		String s = this.hash(hash);
+		String s = hash;
 		for(int i = 0;i<depth;i++){
 			s = this.reduce(s, this.chainLength-i+1);
 			s = this.hash(s);
@@ -136,7 +139,7 @@ public class RainbowTable {
 		}
 		else{
 			String start = this.lastToFirst.get(s);
-			for(int i = 0; i < this.chainLength - depth; i++){
+			for(int i = 0; i < this.chainLength - depth-1; i++){
 				start = this.hash(start);
 				start = this.reduce(start, i);
 			}
