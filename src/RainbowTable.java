@@ -45,7 +45,6 @@ public class RainbowTable {
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}				
-		System.out.println(this.hash("lasy"));
 		this.lastToFirst = new HashMap<>();
 
 		String filename = "table" + numChains+"x"+chainLength+".txt";
@@ -63,11 +62,12 @@ public class RainbowTable {
 	private void buildTable() {
 		// TODO: Build the rainbow table
 		for (int i = 0; i < numRows; i++) {
-			System.out.println("new row");
+			out("row %d",i);
 			String first = this.randomPass();
-			String last = first;
+			String last = first.substring(0);
 			//hash and reduce chainlength times
-			for(int j = 0; i < chainLength-1;i++){
+			//first reduction subscript is 0
+			for(int j = 0; j < chainLength-1;j++){
 				last = this.hash(last);
 				last = this.reduce(last, j);
 			}
@@ -171,7 +171,7 @@ public class RainbowTable {
 	 * The method will (likely) return a different password depending on the subscript passed in.
 	 * It is deterministic (i.e. same input will lead to the same output).
 	 */
-	private String reduce(String hash, int subscript) {
+	protected String reduce(String hash, int subscript) {
 		try {
 			hash += subscript;
 			res = message_digest.digest(hash.getBytes("US-ASCII"));
@@ -244,4 +244,11 @@ public class RainbowTable {
 		return s.toString();
 	}
 	
+	private void out(Object o){
+		System.out.println(o);
+	}
+	
+	private void out(String s, Object... o){
+		System.out.println(String.format(s, o));
+	}
 }
