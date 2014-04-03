@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class RainbowTable {
@@ -61,6 +62,7 @@ public class RainbowTable {
 	
 	private void buildTable() {
 		// TODO: Build the rainbow table
+		
 		for (int i = 0; i < numRows; i++) {
 			out("row %d",i);
 			String first = this.randomPass();
@@ -97,15 +99,47 @@ public class RainbowTable {
 	public String lookup(String hash) {
 		//TODO: Lookup a given hash in the rainbow table.
 		// Return null if the password is not found
-		ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(20);
+		ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(1);
 		ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
 		Set<String> outputs = Collections.newSetFromMap(c);
 //		for each possible depth up to chain length
 		for (int i = 0; i < this.chainLength; i++) {
-			this.lookupDepth(hash, i, outputs);
-			if(!outputs.isEmpty()){
-				break;
-			}
+			t.execute(new Runnable(){
+				private String hash;
+				private int i;
+				private Set<String> outputs;
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+
+					if(!outputs.isEmpty()){
+						return;
+					}
+					lookupDepth(hash, i, outputs);
+
+				}
+				
+				public Runnable init(String hash,int i, Set<String> outputs){
+					this.hash = hash;
+					this.i = i;
+					this.outputs = outputs;
+					
+					return this;
+				};
+				
+			}.init(hash, i, outputs));
+			
+			
+			
+		}
+		t.shutdown();
+		try {
+			t.awaitTermination(3, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("AWAIT EXCEPTION");
+			System.exit(0);
 		}
 		if(outputs.isEmpty()){
 			System.out.println("return null");
@@ -117,6 +151,33 @@ public class RainbowTable {
 			return out;
 		}
 		
+		
+		
+//		
+//		NONTHREADED VERSION
+//		
+//		//TODO: Lookup a given hash in the rainbow table.
+//				// Return null if the password is not found
+//				ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(20);
+//				ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
+//				Set<String> outputs = Collections.newSetFromMap(c);
+////				for each possible depth up to chain length
+//				for (int i = 0; i < this.chainLength; i++) {
+//					this.lookupDepth(hash, i, outputs);
+//					if(!outputs.isEmpty()){
+//						break;
+//					}
+//				}
+//				if(outputs.isEmpty()){
+//					System.out.println("return null");
+//					return null;
+//				}
+//				else{
+//					String out = outputs.iterator().next();
+//					System.out.println("lookup: " + hash + "\noutput: " + out);
+//					return out;
+//				}
+
 	}
 	
 	/**
