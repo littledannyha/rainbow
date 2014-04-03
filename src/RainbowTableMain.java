@@ -10,7 +10,6 @@ public class RainbowTableMain {
 	}
 	
 	public RainbowTableMain(int numChains, int chainLength) {
-//		RainbowTable rt = new RainbowTable(numChains, chainLength);
 		RainbowTable rt = new RainbowTable(numChains, chainLength);
 		
 		Scanner sc = new Scanner(System.in);
