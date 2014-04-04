@@ -9,7 +9,7 @@ public class RainbowTest {
 	public static int NUMCHAINS = 50;
 	public static int CHAINLENGTH = 2;
 	@Test
-	public void ChainLength2(){
+	public void BuildChainLength2(){
 		int i = 2;
 		out("Chain length: %s",i);
 		RainbowTable r = normalTable(i);
@@ -31,7 +31,7 @@ public class RainbowTest {
 	}
 	
 	@Test
-	public void DictionaryTest() {
+	public void BuildDictionaryTest() {
 		RainbowTable r = Dictionary();
 		for (String end : r.lastToFirst.keySet()) {
 			String start = r.lastToFirst.get(end);

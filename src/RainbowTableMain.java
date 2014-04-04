@@ -3,7 +3,7 @@ import java.util.Scanner;
 public class RainbowTableMain {
 
 	private static int NUM_CHAINS = 40000;
-	private static int CHAIN_LENGTH = 40;
+	private static int CHAIN_LENGTH = 10;
 	
 	public RainbowTableMain() {
 		this(NUM_CHAINS, CHAIN_LENGTH);
