@@ -2,7 +2,7 @@ import java.util.Scanner;
 
 public class RainbowTableMain {
 
-	private static int NUM_CHAINS = 40000;
+	private static int NUM_CHAINS = 500000;
 	private static int CHAIN_LENGTH = 10;
 	
 	public RainbowTableMain() {
@@ -20,8 +20,10 @@ public class RainbowTableMain {
 				System.out.println();
 			}
 			else{
+				long startTime = System.currentTimeMillis();
 				String pt = rt.lookup(curr);
-				System.out.println(pt);
+				System.out.println("lookup took: " + ((System.currentTimeMillis()-startTime)) + " ms");
+
 			}
 			
 		}
@@ -37,4 +39,6 @@ public class RainbowTableMain {
 		
 		
 	}
+	
+	
 }

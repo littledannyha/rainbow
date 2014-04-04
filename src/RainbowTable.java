@@ -8,8 +8,9 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +25,7 @@ public class RainbowTable {
 	
 	public MessageDigest message_digest = null;
 	BigInteger bi;
-
+	final int NUM_THREADS = 20;
 	byte[] res;
 	final int NUM_CHARACTERS = 4;
 	char[] characters = new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
@@ -55,6 +56,9 @@ public class RainbowTable {
 			System.out.println("Building table took: " + ((System.currentTimeMillis()-startTime)/1000) + " s");
 			writeToFile(filename);
 		}
+		else{
+			out("table exists");
+		}
 		
 	}
 	
@@ -62,21 +66,31 @@ public class RainbowTable {
 	
 	private void buildTable() {
 		// TODO: Build the rainbow table
+		Iterator<String> all = this.allFourLong();
 		
 		for (int i = 0; i < numRows; i++) {
 			out("row %d",i);
-			String first = this.randomPass();
+			String first = all.hasNext()?all.next():null;
+			if(first==null){
+				return;
+			}
 			String last = first.substring(0);
 			//hash and reduce chainlength times
 			//first reduction subscript is 0
+//			out("plaintext 0: %s",first);
+
 			for(int j = 0; j < chainLength-1;j++){
 				last = this.hash(last);
+//				out("ciphertext %d:%s",j,last);
 				last = this.reduce(last, j);
+//				out("plaintext %d:%s",j+1,last);
+
 			}
+//			out("last ciphertext: %s",this.hash(last));
 //			hash last one more time because last is currently a plaintext
 			this.lastToFirst.put(this.hash(last), first);
-			
 		}
+		out("number of entries:" + lastToFirst.size());
 	}
 	
 	/**
@@ -96,12 +110,48 @@ public class RainbowTable {
 		return lookup(reduce(randomString, 0));
 	}
 	
+	
+//	
+//	public String lookup(String hash){
+//		String s = hash;
+//		int numReductions = 0;
+//		
+//		if(!lastToFirst.containsKey(hash)){
+//			for(; numReductions < this.chainLength-1;numReductions++){
+//				s = hash.substring(0);
+//
+//				s = reduce(s,numReductions);
+//				s = hash(s);
+////				if the reduction wasn't found, continue searching
+//				if(lastToFirst.containsKey(s)){
+//					break;
+//				}
+//			}
+//		}
+//
+//		
+//		if(!lastToFirst.containsKey(s)){
+//			return null;
+//		}
+////		if reduction was found, start searching
+//		else{
+//			String start = lastToFirst.get(s);
+//			for(int i = 0; i < chainLength - numReductions - 1; i++){
+//				start = hash(start);
+//				start = reduce(start,i);
+//			}
+//			return start;
+//		}
+//		
+//	}
 	public String lookup(String hash) {
+		long startTime = System.currentTimeMillis();
+		
 		//TODO: Lookup a given hash in the rainbow table.
 		// Return null if the password is not found
 		ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(1);
 		ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
-		Set<String> outputs = Collections.newSetFromMap(c);
+		Set<String> outputs = new HashSet<String>();
 //		for each possible depth up to chain length
 		for (int i = 0; i < this.chainLength; i++) {
 			t.execute(new Runnable(){
@@ -111,11 +161,13 @@ public class RainbowTable {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-
+					//already found
 					if(!outputs.isEmpty()){
 						return;
 					}
-					lookupDepth(hash, i, outputs);
+					else{
+						lookupDepth(hash, i, outputs);
+					}
 
 				}
 				
@@ -142,28 +194,28 @@ public class RainbowTable {
 			System.exit(0);
 		}
 		if(outputs.isEmpty()){
-			System.out.println("return null");
+			out("search for %s returned null",hash);
 			return null;
 		}
 		else{
 			String out = outputs.iterator().next();
-			System.out.println("lookup: " + hash + "\noutput: " + out);
+			out("search for %s returned %s",hash,out);
+
 			return out;
 		}
 		
 		
 		
 //		
-//		NONTHREADED VERSION
+////		NONTHREADED VERSION
 //		
 //		//TODO: Lookup a given hash in the rainbow table.
 //				// Return null if the password is not found
-//				ExecutorService t = java.util.concurrent.Executors.newFixedThreadPool(20);
-//				ConcurrentHashMap<String,Boolean> c = new ConcurrentHashMap<>();
-//				Set<String> outputs = Collections.newSetFromMap(c);
+//
+//				Set<String> outputs = new HashSet<String>();
 ////				for each possible depth up to chain length
-//				for (int i = 0; i < this.chainLength; i++) {
-//					this.lookupDepth(hash, i, outputs);
+//				for (int distanceFromLast = 0; distanceFromLast < this.chainLength; distanceFromLast++) {
+//					this.lookupDepth(hash, distanceFromLast, outputs);
 //					if(!outputs.isEmpty()){
 //						break;
 //					}
@@ -178,6 +230,7 @@ public class RainbowTable {
 //					return out;
 //				}
 
+		
 	}
 	
 	/**
@@ -192,7 +245,8 @@ public class RainbowTable {
 	public void lookupDepth(String hash,int depth,Set<String> set){
 		String s = hash;
 		for(int i = 0;i<depth;i++){
-			s = this.reduce(s, this.chainLength-i+1);
+			int reductionLevel = this.chainLength-depth+i-1;
+			s = this.reduce(s, reductionLevel);
 			s = this.hash(s);
 		}
 		if(!this.lastToFirst.containsKey(s)){
@@ -200,11 +254,15 @@ public class RainbowTable {
 		}
 		else{
 			String start = this.lastToFirst.get(s);
-			for(int i = 0; i < this.chainLength - depth-1; i++){
+			
+			for(int i = 0; i < this.chainLength - depth - 1; i++){
 				start = this.hash(start);
+				
 				start = this.reduce(start, i);
 			}
-			set.add(start);
+			synchronized(set){
+				set.add(start);
+			}
 			return;
 		}
 			
@@ -215,7 +273,7 @@ public class RainbowTable {
 	 * message_digest is initialized to md5, so this will be the md5 hash if 
 	 * nothing is changed.
 	 */
-	public String hash(String passwd) {
+	public synchronized String hash(String passwd) {
 		try {
 			res = message_digest.digest(passwd.getBytes("US-ASCII"));
 			bi = new BigInteger(1, res);
@@ -232,7 +290,7 @@ public class RainbowTable {
 	 * The method will (likely) return a different password depending on the subscript passed in.
 	 * It is deterministic (i.e. same input will lead to the same output).
 	 */
-	protected String reduce(String hash, int subscript) {
+	protected synchronized String reduce(String hash, int subscript) {
 		try {
 			hash += subscript;
 			res = message_digest.digest(hash.getBytes("US-ASCII"));
@@ -311,5 +369,26 @@ public class RainbowTable {
 	
 	private void out(String s, Object... o){
 		System.out.println(String.format(s, o));
+	}
+	
+	public Iterator<String> allFourLong(){
+		HashSet<String> out = new HashSet<String>();
+		char[] ch = new char[]{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+		int total = 26*26*26*26;
+		for(int i = 0; i < total; i++){
+			StringBuffer currString = new StringBuffer();
+			
+				int a = i%26;
+				int b = (i/26)%26;
+				int c = (i/(26*26))%26;
+				int d = (i/(26*26*26))%26;
+				currString.append(ch[a]);
+				currString.append(ch[b]);
+				currString.append(ch[c]);
+				currString.append(ch[d]);
+				out.add(currString.toString());
+		}
+		out(out.size());
+		return out.iterator();
 	}
 }
